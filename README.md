@@ -1,158 +1,135 @@
-# Contribution [#]: [Issue Title]
+# Contribution 1: Adapter: Mistral AI Model Provider
 
-**Contribution Number:** [1 / 2 / 3]  
-**Student:** [Your Name]  
-**Issue:** [GitHub issue link]  
-**Status:** [Phase I / Phase II / Phase III / Phase IV] [In Progress / Complete]
+**Contribution Number:** 1
+**Student:** Prajan
+**Issue:** https://github.com/orthogonalhq/nous-core/issues/308
+**Status:** Phase I Complete
 
 ---
 
 ## Why I Chose This Issue
 
-[1-2 paragraphs explaining why this issue interests you, how it matches your skills/learning goals, what you hope to learn]
+I chose this issue because it directly maps to work I've already done. 
+In my GSSoC '26 contribution to InterXAI, I built a fallback LLM 
+provider system using LiteLLM, with Groq as primary and Gemini as 
+fallback. That work required understanding LLM provider interfaces, 
+streaming responses, and error handling patterns — exactly what this 
+issue asks for.
+
+The nous-core adapter pattern is well-scoped: implement one interface 
+(`IModelProvider`), follow existing reference implementations, write 
+tests. The project has clear setup docs, explicit acceptance criteria, 
+and reference files named directly in the issue. The blocking PR #324 
+(OpenAiCompatibleProvider refactor) has already merged, so the 
+implementation path is clear.
 
 ---
 
 ## Understanding the Issue
 
 ### Problem Description
-
-[In your own words, what's broken or missing?]
+The nous-core project has a `IModelProvider` interface that model 
+backends must implement to integrate with the system. A Mistral AI 
+provider does not yet exist, meaning users cannot use Mistral models 
+through nous-core.
 
 ### Expected Behavior
-
-[What should happen?]
+A `mistral-provider.ts` file exists in 
+`self/subcortex/providers/src/` that implements `IModelProvider` 
+(invoke, stream, getConfig), validates input against 
+`TextModelInputSchema`, handles streaming correctly, and is exported 
+from the providers package index.
 
 ### Current Behavior
-
-[What actually happens?]
+No Mistral provider exists. The file is missing entirely.
 
 ### Affected Components
-
-[Which parts of the codebase are involved?]
+- `self/subcortex/providers/src/mistral-provider.ts` (to be created)
+- `self/subcortex/providers/src/index.ts` (export to be added)
+- `self/subcortex/providers/src/__tests__/` (tests to be added)
+- `self/shared/src/interfaces/subcortex.ts` (contract to implement)
 
 ---
 
 ## Reproduction Process
 
 ### Environment Setup
-
-[Notes on setting up your local development environment - challenges you faced, how you solved them]
+[To be filled during Phase II]
 
 ### Steps to Reproduce
-
-1. [Step 1]
-2. [Step 2]
-3. [Observed result]
+1. Clone nous-core
+2. Attempt to configure Mistral as model provider
+3. No provider implementation exists
 
 ### Reproduction Evidence
-
-- **Commit showing reproduction:** [Link to commit in your fork]
-- **Screenshots/logs:** [If applicable]
-- **My findings:** [What you discovered during reproduction]
+- **Commit showing reproduction:** [To be added]
 
 ---
 
 ## Solution Approach
 
 ### Analysis
-
-[Your analysis of the root cause - what's causing the issue?]
+Mistral's API is OpenAI-compatible (`/v1/chat/completions`). The 
+implementation follows the same pattern as `openai-provider.ts` but 
+with Mistral-specific base URL and auth headers.
 
 ### Proposed Solution
-
-[High-level description of your fix approach]
+Implement `MistralProvider` class following `ollama-provider.ts` and 
+`openai-provider.ts` as references, using Mistral's Bearer token auth 
+and OpenAI-compatible endpoint.
 
 ### Implementation Plan
 
-Using UMPIRE framework (adapted):
+**Understand:** Create a missing Mistral AI model provider that 
+implements the IModelProvider contract.
 
-**Understand:** [Restate the problem]
+**Match:** `openai-provider.ts` is the closest reference since Mistral 
+uses OpenAI-compatible API shape. `ollama-provider.ts` shows streaming 
+implementation patterns.
 
-**Match:** [What similar patterns/solutions exist in the codebase?]
+**Plan:**
+1. Read `openai-provider.ts`, `ollama-provider.ts`, 
+   `anthropic-provider.ts` fully
+2. Read `IModelProvider` interface in 
+   `self/shared/src/interfaces/subcortex.ts`
+3. Create `mistral-provider.ts` implementing invoke()
+4. Implement stream() with correct async iterable pattern
+5. Implement getConfig() returning provider metadata
+6. Add input validation against TextModelInputSchema
+7. Export from `index.ts`
+8. Write tests in `__tests__/`
+9. Run pnpm typecheck, pnpm lint, pnpm test
 
-**Plan:** [Step-by-step implementation plan]
-1. [Modify file X to do Y]
-2. [Add function Z]
-3. [Update tests]
+**Implement:** [Branch link to be added]
 
-**Implement:** [Link to your branch/commits as you work]
+**Review:** pnpm typecheck + pnpm lint + pnpm test all passing before PR
 
-**Review:** [Self-review checklist - does it follow the project's contribution guidelines?]
-
-**Evaluate:** [How will you verify it works?]
+**Evaluate:** Tests cover invoke, stream, getConfig, and input 
+validation error cases
 
 ---
 
 ## Testing Strategy
 
 ### Unit Tests
-
-- [ ] Test case 1: [Description]
-- [ ] Test case 2: [Description]
-- [ ] Test case 3: [Description]
+- [ ] invoke() returns correct ModelResponse for valid input
+- [ ] stream() yields correct ModelStreamChunk sequence
+- [ ] getConfig() returns correct provider metadata
+- [ ] Input validation rejects invalid TextModelInput
+- [ ] Auth error handled gracefully
 
 ### Integration Tests
-
-- [ ] Integration scenario 1
-- [ ] Integration scenario 2
-
-### Manual Testing
-
-[What you tested manually and results]
-
----
-
-## Implementation Notes
-
-### Week [X] Progress
-
-[What you built this week, challenges faced, decisions made]
-
-### Week [Y] Progress
-
-[Continue documenting as you work]
-
-### Code Changes
-
-- **Files modified:** [List]
-- **Key commits:** [Links to important commits]
-- **Approach decisions:** [Why you chose certain approaches]
+- [ ] End-to-end invoke against Mistral API (with test key)
 
 ---
 
 ## Pull Request
-
-**PR Link:** [GitHub PR URL when submitted]
-
-**PR Description:** [Draft or final PR description - much of the content above can be adapted]
-
-**Maintainer Feedback:**
-- [Date]: [Summary of feedback received]
-- [Date]: [How you addressed it]
-
-**Status:** [Awaiting review / Iterating / Approved / Merged]
-
----
-
-## Learnings & Reflections
-
-### Technical Skills Gained
-
-[What you learned technically]
-
-### Challenges Overcome
-
-[What was hard and how you solved it]
-
-### What I'd Do Differently Next Time
-
-[Reflection on your process]
+**PR Link:** [To be added]
+**Status:** Not yet submitted
 
 ---
 
 ## Resources Used
-
-- [Link to helpful documentation]
-- [Tutorial or Stack Overflow post that helped]
-- [GitHub issues or discussions that helped]
+- https://docs.mistral.ai/
+- https://github.com/orthogonalhq/nous-core/blob/main/CONTRIBUTING.md
+- Reference: openai-provider.ts, ollama-provider.ts
