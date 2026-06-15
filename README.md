@@ -3,7 +3,7 @@
 **Contribution Number:** 1
 **Student:** Prajan Manoj Kumar Rekha
 **Issue:** https://github.com/orthogonalhq/nous-core/issues/308
-**Status:** Phase I Complete
+**Status:** Phase II In Progress
 
 ---
 
@@ -31,19 +31,25 @@ implement to integrate with the system. There is no Mistral AI
 provider yet, so users cannot use Mistral models through nous-core.
 
 ### Expected Behavior
-A mistral-provider.ts file should exist in
-self/subcortex/providers/src/ that implements IModelProvider with
-invoke, stream, and getConfig, validates input against
-TextModelInputSchema, handles streaming correctly, and is exported
-from the providers package index.
+A mistral provider should exist under
+self/subcortex/providers/src/providers/mistral/ following the same
+certified provider leaf structure as the Anthropic provider, with
+adapter.ts, definition.ts, implementation.ts, index.ts, and
+provider.ts files, implementing IModelProvider with invoke, stream,
+and getConfig, and exported from the providers package index.
 
 ### Current Behavior
-The file does not exist. Mistral is not a usable provider in the
-system.
+The mistral directory does not exist under
+self/subcortex/providers/src/providers/. Mistral is not a usable
+provider in the system.
 
 ### Affected Components
-- self/subcortex/providers/src/mistral-provider.ts (to be created)
-- self/subcortex/providers/src/index.ts (export to be added)
+- self/subcortex/providers/src/providers/mistral/ (to be created)
+- self/subcortex/providers/src/providers/mistral/adapter.ts
+- self/subcortex/providers/src/providers/mistral/definition.ts
+- self/subcortex/providers/src/providers/mistral/implementation.ts
+- self/subcortex/providers/src/providers/mistral/index.ts
+- self/subcortex/providers/src/providers/mistral/provider.ts
 - self/subcortex/providers/src/__tests__/ (tests to be added)
 - self/shared/src/interfaces/subcortex.ts (contract to implement)
 
@@ -52,17 +58,41 @@ system.
 ## Reproduction Process
 
 ### Environment Setup
-To be completed in Phase II.
+Cloned the fork and added the upstream remote to access the
+feat/contributor-friendly-inference-provider-surface branch which is
+not included by default in a fork. Fetched upstream branches and
+pushed the feature branch to the fork manually before creating the
+working branch from it.
+
+The repo was initially cloned inside an OneDrive synced directory
+which can interfere with Node.js tooling on Windows. Moved awareness
+of this as a risk for future steps.
+
+pnpm was already available at version 10.6.2. Running pnpm install,
+pnpm build, and pnpm test all completed successfully on the feature
+branch with no errors.
+
+OS: Windows 11
+Node.js: 22+
+pnpm: 10.6.2
+Base branch: feat/contributor-friendly-inference-provider-surface
+Working branch: feature-mistral_adapter
 
 ### Steps to Reproduce
-1. Clone nous-core
-2. Attempt to configure Mistral as a model provider
-3. No provider implementation exists
+1. Clone nous-core and check out
+   feat/contributor-friendly-inference-provider-surface
+2. Navigate to self/subcortex/providers/src/providers/
+3. Only anthropic, ollama, and openai directories exist
+4. No mistral directory or implementation exists
 
 ### Reproduction Evidence
-- **Commit showing reproduction:** To be added in Phase II
-- **Screenshots/logs:** N/A, this is a missing feature not a bug
-- **My findings:** To be completed in Phase II
+- **Commit showing reproduction:** To be added in Phase III
+- **Screenshots/logs:** Confirmed via directory listing showing only
+  anthropic, ollama, and openai under providers/
+- **My findings:** The certified provider leaf structure requires five
+  files per provider: adapter.ts, definition.ts, implementation.ts,
+  index.ts, and provider.ts. This structure is confirmed by inspecting
+  the Anthropic reference implementation.
 
 ---
 
@@ -70,45 +100,57 @@ To be completed in Phase II.
 
 ### Analysis
 Mistral uses an OpenAI-compatible /v1/chat/completions API with Bearer
-token auth. The implementation should closely follow openai-provider.ts
-with Mistral-specific base URL and auth configuration.
+token auth. The maintainer confirmed in issue comments that this
+provider should ship as a config entry against the shared
+ChatCompletionsProvider primitive introduced in the refactored adapter
+surface. The implementation follows the certified provider leaf
+structure with five files mirroring the Anthropic reference.
 
 ### Proposed Solution
-Create MistralProvider implementing IModelProvider, using
-openai-provider.ts as the primary reference for API shape and
-ollama-provider.ts for streaming patterns.
+Create self/subcortex/providers/src/providers/mistral/ with the same
+five-file structure as the Anthropic provider, implementing
+IModelProvider using Mistral's OpenAI-compatible endpoint and Bearer
+token authentication.
 
 ### Implementation Plan
 
 Using UMPIRE framework (adapted):
 
-**Understand:** A Mistral AI provider is missing from nous-core. I need
-to create mistral-provider.ts that implements the IModelProvider
-contract.
+**Understand:** A Mistral AI provider is missing from nous-core. The
+certified provider leaf structure requires five files per provider
+directory. I need to replicate this structure for Mistral using its
+OpenAI-compatible API.
 
-**Match:** openai-provider.ts is the closest reference since Mistral
-uses an OpenAI-compatible API. ollama-provider.ts demonstrates the
-streaming implementation pattern.
+**Match:** The Anthropic provider under
+self/subcortex/providers/src/providers/anthropic/ is the primary
+reference with five files: adapter.ts, definition.ts,
+implementation.ts, index.ts, and provider.ts. Mistral's
+OpenAI-compatible API shape means openai/adapter.ts is also relevant
+for protocol-level implementation details.
 
 **Plan:**
-1. Read openai-provider.ts, ollama-provider.ts, and
-   anthropic-provider.ts fully
-2. Read IModelProvider in self/shared/src/interfaces/subcortex.ts
-3. Create mistral-provider.ts implementing invoke()
-4. Implement stream() with correct async iterable pattern
-5. Implement getConfig() returning provider metadata
-6. Add input validation against TextModelInputSchema
-7. Export from self/subcortex/providers/src/index.ts
-8. Write tests in self/subcortex/providers/src/__tests__/
-9. Run pnpm typecheck, pnpm lint, pnpm test
+1. Read all five Anthropic provider files fully to understand the
+   certified leaf structure
+2. Read openai provider files for OpenAI-compatible protocol patterns
+3. Read IModelProvider in self/shared/src/interfaces/subcortex.ts
+4. Create self/subcortex/providers/src/providers/mistral/
+5. Create definition.ts with Mistral provider metadata and config
+6. Create implementation.ts with invoke() and stream() against
+   Mistral's /v1/chat/completions endpoint
+7. Create adapter.ts wiring implementation to IModelProvider contract
+8. Create provider.ts as the provider entry point
+9. Create index.ts exporting the provider
+10. Write tests in self/subcortex/providers/src/__tests__/
+11. Run pnpm typecheck, pnpm lint, pnpm test
 
-**Implement:** To be added in Phase II
+**Implement:** https://github.com/PrajanManojKumarRekha/nous-core/tree/feature-mistral_adapter
 
 **Review:** pnpm typecheck, pnpm lint, and pnpm test must all pass
-before submitting PR
+before submitting PR. PR targets
+feat/contributor-friendly-inference-provider-surface not main or dev.
 
-**Evaluate:** Tests will cover invoke, stream, getConfig, and input
-validation error cases
+**Evaluate:** Tests will cover invoke, stream, getConfig, input
+validation error cases, and auth error handling.
 
 ---
 
@@ -126,28 +168,35 @@ validation error cases
 - [ ] Integration scenario 2: Streaming response from Mistral API
 
 ### Manual Testing
-To be completed in Phase II.
+To be completed in Phase III.
 
 ---
 
 ## Implementation Notes
 
 ### Week 1 Progress
-To be completed in Phase II.
+Set up local development environment on Windows 11. Installed pnpm
+10.6.2 and confirmed pnpm install, pnpm build, and pnpm test all pass
+on the feat/contributor-friendly-inference-provider-surface branch.
+Added upstream remote to fork and pushed feature branch. Created
+working branch feature-mistral_adapter from the correct base branch.
+Confirmed certified provider leaf structure by inspecting Anthropic
+reference implementation which contains adapter.ts, definition.ts,
+implementation.ts, index.ts, and provider.ts.
 
 ### Week 2 Progress
-To be completed in Phase II.
+To be completed in Phase III.
 
 ### Week 3 Progress
-To be completed in Phase II.
+To be completed in Phase III.
 
 ### Week 4 Progress
-To be completed in Phase II.
+To be completed in Phase III.
 
 ### Code Changes
-- **Files modified:** To be added in Phase II
-- **Key commits:** To be added in Phase II
-- **Approach decisions:** To be added in Phase II
+- **Files modified:** To be added in Phase III
+- **Key commits:** To be added in Phase III
+- **Approach decisions:** To be added in Phase III
 
 ---
 
@@ -158,4 +207,26 @@ To be completed in Phase II.
 - [Date]: [Summary of feedback received]
 - [Date]: [How you addressed it]
 
-**Status:** Not
+**Status:** Not yet submitted
+
+---
+
+## Learnings & Reflections
+
+### Technical Skills Gained
+To be completed after Phase III.
+
+### Challenges Overcome
+To be completed after Phase III.
+
+### What I'd Do Differently Next Time
+To be completed after Phase III.
+
+---
+
+## Resources Used
+- https://docs.mistral.ai/
+- https://docs.nue.orthg.nl/docs/development/provider-adapters
+- https://github.com/orthogonalhq/nous-core/blob/main/CONTRIBUTING.md
+- Reference implementations: anthropic provider, openai provider,
+  ollama provider under self/subcortex/providers/src/providers/
