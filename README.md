@@ -3,7 +3,7 @@
 **Contribution Number:** 1
 **Student:** Prajan Manoj Kumar Rekha
 **Issue:** https://github.com/orthogonalhq/nous-core/issues/308
-**Status:** Phase II In Progress
+**Status:** Phase IV In Progress, PR open and awaiting review
 
 ---
 
@@ -239,7 +239,28 @@ Challenges faced:
 
 
 ### Week 4 Progress
-To be completed in Phase IV.
+Ran an adversarial self-review of the implementation using Claude Code, deliberately 
+asking it to find problems rather than confirm the code looked fine. This surfaced 7 
+real bugs that all 31 of my original passing tests had missed: tool_calls silently 
+dropped in invoke() and stream(), an adapterKey collision with the shared 
+chat-completions key that made my entire custom adapter unreachable at runtime, 
+tool_call_id dropped on multi-turn tool conversations, a double /v1/v1/ endpoint bug, 
+a deprecated default model, and a malformed-output edge case that could surface 
+"[object Object]" to a user.
+
+Fixed all 7 issues and added 14 new regression tests targeting each one specifically, 
+bringing the suite to 42 tests. Also discovered mid-rebase that upstream had merged a 
+github-copilot-cli provider since I last synced, which created merge conflicts in the 
+same shared roster test files I'd touched. Resolved those conflicts by hand, verified 
+line-ending issues from core.autocrlf were not masking real test failures, and confirmed 
+the full 56-test focused provider suite still passes after the rebase. Opened the PR 
+against feat/contributor-friendly-inference-provider-surface as instructed.
+
+Key commits:
+- a5e81635: fix(subcortex-providers): fix mistral tool_calls handling, adapterKey 
+  collision, and endpoint normalization
+- f36839e0: test(subcortex-providers): fix adapter roster assertion after rebase onto 
+  github-copilot-cli
 
 ### Code Changes
 - **Files modified:**
@@ -254,13 +275,19 @@ To be completed in Phase IV.
   - self/subcortex/providers/src/__tests__/provider-pipeline-integration.test.ts (modified)
 
 - **Key commits:**
-  - c3ff9f83: feat(subcortex-providers): add mistral provider leaf with definition, adapter, and factory
-  - 48bbff37: test(subcortex-providers): add mistral provider test suite
-  - 4459b32c: fix(subcortex-providers): register mistral in provider catalogs and type tests
+  - 05c5db2c: feat(subcortex-providers): add mistral provider leaf with definition, adapter, and factory
+  - c2a800d5: test(subcortex-providers): add mistral provider test suite
+  - f3b0a89b: fix(subcortex-providers): register mistral in provider catalogs and type tests
+  - 37d77cef: test(subcortex-providers): register mistral in remaining roster assertions and fix pre-existing llama-cpp adapter gap
+  - a3ea4025: chore(subcortex-providers): regenerate provider catalogs with mistral leaf
+  - f36839e0: test(subcortex-providers): fix adapter roster assertion after rebase onto github-copilot-cli
+  - a5e81635: fix(subcortex-providers): fix mistral tool_calls handling, adapterKey collision, and endpoint normalization
 
 - **Approach decisions:**
-  - Used chat-completions protocol and adapterKey instead of writing a 
-    custom protocol since Mistral speaks OpenAI-compatible Chat Completions
+  - Used chat-completions protocol since Mistral speaks OpenAI-compatible Chat 
+    Completions, but gave Mistral its own adapterKey ('mistral') instead of reusing 
+    chat-completions, after discovering during self-review that sharing the key with 
+    openai/groq/llama-cpp made the custom adapter unreachable through the resolver
   - Kept implementation.ts as a leaf-owned class rather than delegating to 
     the shared ChatCompletionsProvider, to keep Mistral-specific auth and 
     endpoint handling self-contained
@@ -271,13 +298,13 @@ To be completed in Phase IV.
 ---
 
 ## Pull Request
-**PR Link:** To be added
-**PR Description:** To be added
+**PR Link:** https://github.com/orthogonalhq/nous-core/pull/419
+**PR Description:** Added a Mistral AI model provider leaf under self/subcortex/providers/src/providers/mistral/, implementing IModelProvider with invoke, stream, and getConfig against Mistral's OpenAI-compatible Chat Completions API. Found and fixed 7 real bugs (silently dropped tool_calls, an adapterKey collision that made my custom adapter dead code at runtime, lost tool_call_id correlation, and a malformed-output edge case) through a self-driven adversarial review before opening the PR, with regression tests for each.
 **Maintainer Feedback:**
 - [Date]: [Summary of feedback received]
 - [Date]: [How you addressed it]
 
-**Status:** Phase III Complete, PR pending
+**Status:** Awaiting review
 
 ---
 
